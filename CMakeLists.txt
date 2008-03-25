@@ -4,7 +4,7 @@ PROJECT(Gridley C)
 SET(CMAKE_VERBOSE_MAKEFILE TRUE)
 
 # add definitions, compiler switches, etc.
-ADD_DEFINITIONS(-Wall -O2 -ansi -pedantic -std=c99)
+ADD_DEFINITIONS(-Wall -O2 -std=c99 -pedantic)
 
 # add some alternate include and link dirs
 INCLUDE_DIRECTORIES(/usr/local/include)

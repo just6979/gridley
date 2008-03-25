@@ -17,25 +17,26 @@ Cool!
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <math.h>
 
 /* constants */
-#define true 1
-#define false 0
-#define PI 3.14159265
+const float PI = 3.14159265;
 #define MAX_POINTS 100
 #define LINES 26
 #define MAX_LEN 80
 
 /* types */
-/* store world coords and line endpoint status */
+// store world coords and line endpoint status
 typedef struct point {
 	GLfloat x, y, z;
 	GLboolean end;
 } Point;
-/* 3 by 3 matrix */
+
+// 3 by 3 matrix
 typedef GLfloat Matrix3x3[3][3];
-/* flags, all boolean globals */
+
+// flags, all boolean globals
 typedef struct flags {
 	GLboolean show_help;
 	GLboolean show_cur_line;
@@ -45,25 +46,26 @@ typedef struct flags {
 	GLboolean fullscreen;
 	GLboolean keep_factor;
 } Flags;
-/* other globals, keep them in this struct to prevent strays */
+
+// other globals, keep them in this struct to prevent strays
 typedef struct globals {
-	/* size of the window */
+	// size of the window
 	GLint view_width, view_height;
 	GLfloat x_range, y_range;
-	/* how many points to skip between gridlines */
+	// how many points to skip between gridlines
 	GLfloat grid_scale;
-	/* how many pixels per point */
+	// how many pixels per point
 	GLfloat screen_scale;
-	/* array of chosen points */
+	// array of chosen points
 	Point points[MAX_POINTS];
-	/* index to last point, the one that will be picked next */
+	// index to last point, the one that will be picked next
 	GLint last_point;
-	/* factor to perform each transform by */
+	// factor to perform each transform by
 	GLfloat factor;
 	GLint factor_index;
-	/* how many points to display in status */
+	// how many points to display in status
 	GLint display_points;
-	/* mouse position */
+	// mouse position
 	GLint mouse_x;
 	GLint mouse_y;
 } Globals;
@@ -74,9 +76,9 @@ Flags f;
 
 /* utility functions */
 GLfloat float_from_chars(char key) {
-	/* store digits to be turned into float */
+	// store digits to be turned into float
 	static char factor_str[11] = {0};
-	/* stop char for strtod */
+	// stop char for strtod
 	char* end = '\0';
 	if (g.factor_index >= 10) g.factor_index = 0;
 	factor_str[g.factor_index++] = key;
@@ -101,15 +103,17 @@ Point screen_to_world(GLfloat x,  GLfloat y, GLfloat z, GLboolean end) {
 	return tmp;
 }
 
-/*Point screen_to_world(Point screen) {
+/*
+Point screen_to_world(Point screen) {
 	return screen_to_world(screen.x, screen.y, screen.z, screen.end);
 }
 */
+
 /* remember current position */
 void update_position(GLint x, GLint y) {
-	/* in homogeneous world coords */
+	// in homogeneous world coords
 	g.points[g.last_point] = screen_to_world(x, y, 1.0, true);
-	/* in screen coords */
+	// in screen coords
 	g.mouse_x = x;
 	g.mouse_y = y;
 }
@@ -134,7 +138,7 @@ GLfloat round_float(GLfloat f) {
 	}
 	return a;
 }
-/* floating point round a Point at a time */
+/* floating point round, one Point at a time */
 Point round_Point(Point p) {
 	p.x = round_float(p.x);
 	p.y = round_float(p.y);
@@ -153,7 +157,6 @@ GLfloat degrees_to_radians(GLfloat degrees) {
 	return (PI / 180.0) * degrees;
 }
 
-/* undo last command */
 void undo(void) {
 	if (g.last_point > 0) g.last_point--;
 }
@@ -163,24 +166,24 @@ void draw_grid(void) {
 	GLfloat i;
 
 	glBegin(GL_LINES);
-		/* grid, gray */
+		// grid, gray
 		glColor3f(0.9, 0.9, 0.9);
-		/* vertical lines in -x */
+		// vertical lines in -x
 		for (i = 0; i > -g.x_range; i -= g.grid_scale) {
 			glVertex2f(i, -g.y_range);
 			glVertex2f(i, g.y_range);
 		}
-		/* vertical lines in x */
+		// vertical lines in x
 		for (i = 0; i < g.x_range; i += g.grid_scale) {
 			glVertex2f(i, -g.y_range);
 			glVertex2f(i, g.y_range);
 		}
-		/* horizontal lines in -y */
+		// horizontal lines in -y
 		for (i = 0; i > -g.y_range; i -= g.grid_scale) {
 			glVertex2f(-g.x_range, i);
 			glVertex2f(g.x_range, i);
 		}
-		/* horizontal lines in y */
+		// horizontal lines in y
 		for (i = 0; i < g.y_range; i += g.grid_scale) {
 			glVertex2f(-g.x_range, i);
 			glVertex2f(g.x_range, i);
@@ -190,7 +193,7 @@ void draw_grid(void) {
 
 void draw_origin(void) {
 	glBegin(GL_LINES);
-		/* lines through origin, red */
+	// lines through origin, red
 		glColor3f(1.0, 0.0, 0.0);
 		glVertex2f(-g.x_range, 0.0);
 		glVertex2f(g.x_range, 0.0);
@@ -202,7 +205,7 @@ void draw_origin(void) {
 void draw_points(void) {
 	GLint i;
 
-	/* all points, black */
+	// all points, black
 	glColor3f(0.0, 0.0, 0.0);
 	glBegin(GL_POINTS);
 	for (i = 0; i < g.last_point - 1; i++) {
@@ -210,12 +213,12 @@ void draw_points(void) {
 			glVertex2f(g.points[i].x, g.points[i].y);
 		}
 	}
-	/*last point, green */
+	// last point, green
 	if (g.last_point > 0) {
 		glColor3f(0.0, 1.0, 0.0);
 		glVertex2f(g.points[g.last_point - 1].x, g.points[g.last_point - 1].y);
 	}
-	/* current point, yellow */
+	// current point, yellow
 	glColor4f(1.0, 1.0, 0.0, 0.5);
 	glVertex2f(g.points[g.last_point].x, g.points[g.last_point].y);
 
@@ -225,7 +228,7 @@ void draw_points(void) {
 void draw_lines(void) {
 	GLint i;
 
-	/* lines, black */
+	// lines, black
 	glColor3f(0.0, 0.0, 0.0);
 	glBegin(GL_LINE_STRIP);
 	for (i = 0; i < g.last_point; i++) {
@@ -242,13 +245,13 @@ void draw_lines(void) {
 
 void draw_cur_line(void) {
 	if (g.last_point > 0) {
-		/* current line, green to yellow */
+		// current line, green to yellow
 		glColor3f(0.0, 1.0, 0.0);
 		glLineStipple(1, 0xF0F0);
 		glEnable(GL_LINE_STIPPLE);
 			glBegin(GL_LINES);
 			glVertex2f(g.points[g.last_point - 1].x, g.points[g.last_point - 1].y);
-		/*glColor3f(1.0, 1.0, 0.0); */
+// 			glColor3f(1.0, 1.0, 0.0);
 			glVertex2f(g.points[g.last_point].x, g.points[g.last_point].y);
 		glEnd();
 		glDisable(GL_LINE_STIPPLE);
@@ -295,34 +298,34 @@ void draw_help(void) {
 		"    alter the transform factor",
 	};
 
-	/* help message, blue */
+	// help message, blue
 	glColor3f(0.0, 0.0, 1.0);
-	/* save current transformation matrix */
+	// save current transformation matrix
 	glPushMatrix();
 	for (i = 0; i < LINES; i++) {
 		glRasterPos2f(-g.x_range + 0.25, g.y_range - 0.5 - 0.6 * i);
 		draw_string(help_msg[i], MAX_LEN);
 	}
-	/* remember last transformation matrix */
+	// remember last transformation matrix
 	glPopMatrix();
 }
 
 void draw_status(void) {
 	int i;
 	char msg[MAX_LEN];
-	/* point status, blue */
+	// point status, blue
 	glColor3f(0.0, 0.0, 1.0);
-	/* save current transformation matrix */
+	// save current transformation matrix
 	glPushMatrix();
 
-	/* screen coords */
-	/* move to bottom left */
+	// screen coords
+	// move to bottom left
 	glRasterPos2f(-g.x_range + 0.25, -g.y_range + 0.25);
  snprintf(msg, MAX_LEN, "Mouse: [%d,%d]", g.mouse_x, g.mouse_y);
 	draw_string(msg, MAX_LEN);
 
-	/* current point */
-	/* move to bottom left, a little higher */
+	// current point
+	// move to bottom left, a little higher
 	glRasterPos2f(-g.x_range + 0.25, -g.y_range + 1.0);
 	snprintf(msg, MAX_LEN, "#%d: [%.2f,%.2f]",
 		g.last_point,
@@ -331,8 +334,8 @@ void draw_status(void) {
 	);
 	draw_string(msg, MAX_LEN);
 
-	/* current point, snapped to grid */
-	/* move to bottom left, a little right */
+	// current point, snapped to grid
+	// move to bottom left, a little right
 	glRasterPos2f(-g.x_range + 5, -g.y_range + 1.0);
 	if (f.snap_to_grid) {
 		snprintf(msg, MAX_LEN, "  Snapped : [%.2f,%.2f]",
@@ -342,11 +345,11 @@ void draw_status(void) {
 		draw_string(msg,MAX_LEN);
 	}
 
-	/* previous points, quantity is choosable */
+	// previous points, quantity is choosable
 	for (i = 1; i <= g.display_points && i <= g.last_point; i++) {
-		/* move to lower left corner, a little higher each time */
+		// move to lower left corner, a little higher each time
 		glRasterPos2f(-g.x_range + 0.25, -g.y_range + 1.0 + 0.6 * i);
-		/* to distinguish from line ending points. JW 2007-01-09 */
+		// to distinguish from line ending points. JW 2007-01-09
 		/*if (g.points[g.last_point -i].end == true) {
 			snprintf(msg, MAX_LEN, "#%d: [%.2f,%.2f)",
 				g.last_point - i,
@@ -359,12 +362,12 @@ void draw_status(void) {
 				g.points[g.last_point - i].x,
 				g.points[g.last_point - i].y
 			);
-		/*} */
-		/* display message */
+// }
+	// display message
 		draw_string(msg, MAX_LEN);
 	}
 
-	/* show transformation factor */
+	// show transformation factor
 	glRasterPos2f(0.25, -g.y_range + 0.25);
 	if (g.factor != 0) {
 		if (f.keep_factor) {
@@ -381,7 +384,7 @@ void draw_status(void) {
 	}
 	draw_string(msg, MAX_LEN);
 
-	/* remember last transformation matrix */
+	// remember last transformation matrix
 	glPopMatrix();
 }
 
@@ -409,13 +412,13 @@ void reshape(GLint w, GLint h)
 {
 	g.view_width = w;
 	g.view_height = h;
-	/* range is half the height or width */
+	// range is half the height or width
 	g.x_range = g.view_width / 2 / g.screen_scale;
 	g.y_range = g.view_height / 2 / g.screen_scale;
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	/* set view transform to put 0,0 in the center of the window */
+	// set view transform to put 0,0 in the center of the window
 	glOrtho(-g.x_range, g.x_range, -g.y_range, g.y_range, -1, 1);
 	glViewport(0, 0, g.view_width, g.view_height);
 	glMatrixMode(GL_MODELVIEW);
@@ -429,11 +432,11 @@ void keyboard(unsigned char key, GLint x, GLint y) {
 	GLfloat scale_factor = 2;
 	GLfloat shear_factor = 2;
 	GLfloat rotate_factor = 30;
-	/* temp storage for rotations */
+	// temp storage for rotations
 	GLfloat rads;
 	GLfloat tmp_x;
 
-	/* read digits, make float from them */
+	// read digits, make float from them
 	if (is_digit(key) || (key == '.') || (key == '-')) {
 		g.factor = float_from_chars(key);
 		glutPostRedisplay();
@@ -441,7 +444,7 @@ void keyboard(unsigned char key, GLint x, GLint y) {
 	}
 
 
-	/* if user entered a factor, use it, otherwise keep defaults */
+	// if user entered a factor, use it, otherwise keep defaults
 	if (g.factor != 0) {
 		scale_factor = g.factor;
 		rotate_factor = g.factor;
@@ -449,11 +452,11 @@ void keyboard(unsigned char key, GLint x, GLint y) {
 	}
 
 	switch (key) {
-	/* quit */
+	// quit
 	case 'q':
 		exit(0);
 		break;
-	/* toggle fullscreen */
+	// toggle fullscreen
 	case 'f':
 		if (f.fullscreen) {
 			glutReshapeWindow(500, 500);
@@ -463,27 +466,27 @@ void keyboard(unsigned char key, GLint x, GLint y) {
 		}
 		f.fullscreen = !f.fullscreen;
 		break;
-	/* toggle current line display */
+	// toggle current line display
 	case 'l':
 		f.show_cur_line = !f.show_cur_line;
 		break;
-	/* toggle grid */
+	// toggle grid
 	case 'g':
 		f.show_grid = !f.show_grid;
 		break;
-	/* toggle snap to grid */
+	// toggle snap to grid
 	case 'p':
 		f.snap_to_grid = !f.snap_to_grid;
 		break;
-	/* clear points */
+	// clear points
 	case 'c':
 		g.last_point = 0;
 		break;
-	/* undo last point */
+	// undo last point
 	case 'u':
 		undo();
 		break;
-	/* reflect over x or y axis */
+	// reflect over x or y axis
 	case 'x':
 		for (i = 0; i < g.last_point; i++) {
 			g.points[i].x = -g.points[i].x;
@@ -494,7 +497,7 @@ void keyboard(unsigned char key, GLint x, GLint y) {
 			g.points[i].y = -g.points[i].y;
 		}
 		break;
-	/* rotate by n degrees, clockwise or counterclockwise */
+	// rotate by n degrees, clockwise or counterclockwise
 	case 'r':
 		rads = degrees_to_radians(rotate_factor);
 		for (i = 0; i < g.last_point; i++) {
@@ -512,7 +515,7 @@ void keyboard(unsigned char key, GLint x, GLint y) {
 			g.points[i].y = tmp_x * sin(rads) + g.points[i].y * cos(rads);
 		}
 		break;
-	/* scale by one; up, down, y up, y down, x up, x down */
+	// scale by one; up, down, y up, y down, x up, x down
 	case 's':
 		for(i = 0; i < g.last_point; i++ ) {
 			g.points[i].x *= scale_factor;
@@ -545,7 +548,7 @@ void keyboard(unsigned char key, GLint x, GLint y) {
 			g.points[i].x /= scale_factor;
 		}
 		break;
-	/* shear x by 1 */
+	// shear x by 1
 	case 'h':
 		for(i = 0; i < g.last_point; i++ ) {
 			g.points[i].x += g.points[i].y;
@@ -557,7 +560,7 @@ void keyboard(unsigned char key, GLint x, GLint y) {
 		}
 		break;
 	case 27:
-	/* ESCAPE */
+	// ESCAPE
 		g.factor_index = 0;
 		g.factor = 0;
 		break;
@@ -582,13 +585,13 @@ void keyboard(unsigned char key, GLint x, GLint y) {
 void special(GLint key, GLint x, GLint y) {
 	GLfloat translate_factor = 1.0;
 	GLint i;
-	/* if user entered a factor, use it, otherwise keep defaults */
+	// if user entered a factor, use it, otherwise keep defaults
 	if (g.factor != 0.0) {
 		translate_factor = g.factor;
 	}
 
 	switch (key) {
-	/* translate by 1: +y, -y, -x, +x */
+	// translate by 1: +y, -y, -x, +x
 	case GLUT_KEY_UP:
 		for (i = 0; i < g.last_point; i++) {
 			g.points[i].y += translate_factor;
@@ -609,7 +612,7 @@ void special(GLint key, GLint x, GLint y) {
 			g.points[i].x += translate_factor;
 		}
 		break;
-	/* toggle help display */
+// toggle help display
 	case GLUT_KEY_F1:
 		f.show_help = !f.show_help;
 		break;
@@ -632,13 +635,13 @@ void special(GLint key, GLint x, GLint y) {
 }
 
 void mouse(GLint button, GLint state, GLint x, GLint y) {
-	/* too many points? */
+	// too many points?
 	if (g.last_point >= MAX_POINTS) {
-		/* don't do anything */
+	// don't do anything
 		printf("Maximum points limit hit: %d.\n", MAX_POINTS);
 		return;
 	}
-	/* left button, connect previous point */
+	// left button, connect previous point
 	if (button == GLUT_LEFT_BUTTON) {
 		if (state == GLUT_UP) {
 			g.points[g.last_point].end = true;
@@ -650,7 +653,7 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
 			g.last_point++;
 		}
 	}
-	/* right button, do not connect previous point */
+	// right button, do not connect previous point
 	if (button == GLUT_RIGHT_BUTTON) {
 		if (state == GLUT_UP) {
 			g.points[g.last_point].end = false;
@@ -667,13 +670,13 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
 }
 
 void motion(GLint x, GLint y) {
-	/* update the position whenever the mouse moves while any buttons are down */
+	// update the position whenever the mouse moves while any buttons are down
 	update_position(x, y);
 	glutPostRedisplay();
 }
 
 void passive_motion(GLint x, GLint y) {
-	/* update the position whenever the mouse moves while all button are up */
+	// update the position whenever the mouse moves while all button are up
 	update_position(x, y);
 	glutPostRedisplay();
 }
@@ -694,17 +697,17 @@ void gl_setup (void)
 	glEnable(GL_SMOOTH);
 	glLineWidth(1.0);
 	glPointSize(3.0);
-	/* clear to white */
+	// clear to white
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 }
 
 void glut_setup(void) {
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-	/* set up window */
+	// set up window
 	glutInitWindowPosition(100, 50);
 	glutInitWindowSize(g.view_width, g.view_height);
 	glutCreateWindow("Gridley");
-    /* register callbacks */
+	// register callbacks
 	glutDisplayFunc(display);
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyboard);
@@ -731,8 +734,8 @@ int main(GLint argc, char** argv)
 	f.show_help = false;
 	f.show_status = true;
 	f.snap_to_grid = true;
-	/* enable this is we want the factor to reset to default after any operation */
-	/* false is more like Lorenzen's */
+	// enable this is we want the factor to reset to default after any operation
+	// false is more like Lorenzen's
 	f.keep_factor = false;
 
 	glutInit(&argc, argv);
