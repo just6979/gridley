@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 2.6)
+
 PROJECT(Gridley C)
 
 # if you don't want the full compiler output, remove the following line
