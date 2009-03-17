@@ -1,24 +1,32 @@
 /*
 Justin White
 CS 436
-2004-09-17
+
+2004-09-17 - GLUT version
+2009-03 - SDL version
 
 I wrote this program for CS-436, Computer Graphics, at Bridgewater State College.
 I've heard the professor used it at lease the next few semesters as an example.
 Cool!
+
+This new version has been ported to use SDL instead of GLUT. It is still useful for education,
+maybe better since GLUT is limited and old while SDL is more capable and still actively developed.
+
+The old version is still available from revision control (Mercurial).
+Recent revisions include Code::Blocks IDE project files as well.
+
+SDL Port Progress:
+2009-03-16: 1 Hour
+
 */
-
-#ifdef WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#endif
-
-#include <GL/glut.h>
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
+
+#include <SDL.h>
+#include <SDL_opengl.h>
 
 /* constants */
 const float PI = 3.14159265;
@@ -29,7 +37,9 @@ const float PI = 3.14159265;
 /* types */
 // store world coords and line endpoint status
 typedef struct point {
-	GLfloat x, y, z;
+	GLfloat x;
+	GLfloat y;
+	GLfloat z;
 	GLboolean end;
 } Point;
 
@@ -49,8 +59,12 @@ typedef struct flags {
 
 // other globals, keep them in this struct to prevent strays
 typedef struct globals {
+	// is the event loop still going?
+	bool running;
 	// size of the window
 	GLint view_width, view_height;
+	// framebuffer bits per pixel
+	GLint view_bpp;
 	GLfloat x_range, y_range;
 	// how many points to skip between gridlines
 	GLfloat grid_scale;
@@ -262,7 +276,7 @@ void draw_string(char* msg, GLint max_len) {
 	GLint j;
 	for (j = 0; j < max_len; j++) {
 		if (msg[j] == '\0') { break; }
-		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, msg[j]);
+//		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_10, msg[j]);
 	}
 }
 
@@ -295,7 +309,7 @@ void draw_help(void) {
 		"Right = Translate right. Default: 1",
 		"ESC = Reset transform factor, if retained.",
 		"Numbers in the form /[-]\\d*[.]\\d*/ will",
-		"    alter the transform factor",
+		"	alter the transform factor",
 	};
 
 	// help message, blue
@@ -392,7 +406,7 @@ void draw_status(void) {
 /* GLUT callbacks */
 void display (void)
 {
-    glClear(GL_COLOR_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	if (f.show_grid) {
 		draw_grid();
@@ -404,7 +418,7 @@ void display (void)
 	draw_lines();
 	if (f.show_cur_line) draw_cur_line();
 
-	glutSwapBuffers();
+//	glutSwapBuffers();
 }
 
 
@@ -424,7 +438,7 @@ void reshape(GLint w, GLint h)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
-	glutPostRedisplay();
+//	glutPostRedisplay();
 }
 
 void keyboard(unsigned char key, GLint x, GLint y) {
@@ -439,7 +453,7 @@ void keyboard(unsigned char key, GLint x, GLint y) {
 	// read digits, make float from them
 	if (is_digit(key) || (key == '.') || (key == '-')) {
 		g.factor = float_from_chars(key);
-		glutPostRedisplay();
+//		glutPostRedisplay();
 		return;
 	}
 
@@ -459,10 +473,10 @@ void keyboard(unsigned char key, GLint x, GLint y) {
 	// toggle fullscreen
 	case 'f':
 		if (f.fullscreen) {
-			glutReshapeWindow(500, 500);
-			glutPositionWindow(100, 50);
+//			glutReshapeWindow(500, 500);
+//			glutPositionWindow(100, 50);
 		} else {
-			glutFullScreen();
+//			glutFullScreen();
 		}
 		f.fullscreen = !f.fullscreen;
 		break;
@@ -579,7 +593,7 @@ void keyboard(unsigned char key, GLint x, GLint y) {
 		g.factor = 0;
 	}
 
-	glutPostRedisplay();
+//	glutPostRedisplay();
 }
 
 void special(GLint key, GLint x, GLint y) {
@@ -592,34 +606,34 @@ void special(GLint key, GLint x, GLint y) {
 
 	switch (key) {
 	// translate by 1: +y, -y, -x, +x
-	case GLUT_KEY_UP:
+	case SDLK_UP:
 		for (i = 0; i < g.last_point; i++) {
 			g.points[i].y += translate_factor;
 		}
 		break;
-	case GLUT_KEY_DOWN:
+	case SDLK_DOWN:
 		for (i = 0; i < g.last_point; i++) {
 			g.points[i].y -= translate_factor;
 		}
 		break;
-	case GLUT_KEY_LEFT:
+	case SDLK_LEFT:
 		for (i = 0; i < g.last_point; i++) {
 			g.points[i].x -= translate_factor;
 		}
 		break;
-	case GLUT_KEY_RIGHT:
+	case SDLK_RIGHT:
 		for (i = 0; i < g.last_point; i++) {
 			g.points[i].x += translate_factor;
 		}
 		break;
 // toggle help display
-	case GLUT_KEY_F1:
+	case SDLK_F1:
 		f.show_help = !f.show_help;
 		break;
-	case GLUT_KEY_F2:
+	case SDLK_F2:
 		f.show_status = !f.show_status;
 		break;
-	case GLUT_KEY_F3:
+	case SDLK_F3:
 		f.keep_factor = !f.keep_factor;
 		break;
 	default:
@@ -631,10 +645,10 @@ void special(GLint key, GLint x, GLint y) {
 		g.factor = 0;
 	}
 
-	glutPostRedisplay();
+//	glutPostRedisplay();
 }
 
-void mouse(GLint button, GLint state, GLint x, GLint y) {
+void mouse_up(int button) {
 	// too many points?
 	if (g.last_point >= MAX_POINTS) {
 	// don't do anything
@@ -642,52 +656,27 @@ void mouse(GLint button, GLint state, GLint x, GLint y) {
 		return;
 	}
 	// left button, connect previous point
-	if (button == GLUT_LEFT_BUTTON) {
-		if (state == GLUT_UP) {
-			g.points[g.last_point].end = true;
-			if (f.snap_to_grid) {
-				g.points[g.last_point] = round_Point(g.points[g.last_point]);
-			} else {
-				g.points[g.last_point] = g.points[g.last_point];
-			}
-			g.last_point++;
+	if (button == SDL_BUTTON_LEFT) {
+		g.points[g.last_point].end = true;
+		if (f.snap_to_grid) {
+			g.points[g.last_point] = round_Point(g.points[g.last_point]);
+		} else {
+			g.points[g.last_point] = g.points[g.last_point];
 		}
+		g.last_point++;
 	}
 	// right button, do not connect previous point
-	if (button == GLUT_RIGHT_BUTTON) {
-		if (state == GLUT_UP) {
-			g.points[g.last_point].end = false;
-			if (f.snap_to_grid) {
-				g.points[g.last_point] = round_Point(g.points[g.last_point]);
-			} else {
-				g.points[g.last_point] = g.points[g.last_point];
-			}
-			g.last_point++;
+	if (button == SDL_BUTTON_RIGHT) {
+		g.points[g.last_point].end = false;
+		if (f.snap_to_grid) {
+			g.points[g.last_point] = round_Point(g.points[g.last_point]);
+		} else {
+			g.points[g.last_point] = g.points[g.last_point];
 		}
+		g.last_point++;
 	}
 
-	glutPostRedisplay();
-}
-
-void motion(GLint x, GLint y) {
-	// update the position whenever the mouse moves while any buttons are down
-	update_position(x, y);
-	glutPostRedisplay();
-}
-
-void passive_motion(GLint x, GLint y) {
-	// update the position whenever the mouse moves while all button are up
-	update_position(x, y);
-	glutPostRedisplay();
-}
-
-void entry(GLint state) {
-}
-
-void visibility(GLint state) {
-}
-
-void idle(void) {
+//	glutPostRedisplay();
 }
 
 /* setup functions */
@@ -701,23 +690,11 @@ void gl_setup (void)
 	glClearColor(1.0, 1.0, 1.0, 1.0);
 }
 
-void glut_setup(void) {
-	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA);
-	// set up window
-	glutInitWindowPosition(100, 50);
-	glutInitWindowSize(g.view_width, g.view_height);
-	glutCreateWindow("Gridley");
-	// register callbacks
-	glutDisplayFunc(display);
-	glutReshapeFunc(reshape);
-	glutKeyboardFunc(keyboard);
-	glutSpecialFunc(special);
-	glutMouseFunc(mouse);
-	glutMotionFunc(motion);
-	glutPassiveMotionFunc(motion);
-	glutEntryFunc(entry);
-	glutVisibilityFunc(visibility);
-	glutIdleFunc(idle);
+int quit(int ret) {
+	printf("Quitting SDL\n");
+	SDL_Quit();
+	printf("Exiting");
+	exit(ret);
 }
 
 /* entry point */
@@ -738,10 +715,50 @@ int main(GLint argc, char** argv)
 	// false is more like Lorenzen's
 	f.keep_factor = false;
 
-	glutInit(&argc, argv);
-	glut_setup();
+	printf("Initializing SDL\n");
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+		fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
+		quit(1);
+	}
+
+	printf("Initializing video\n");
+	SDL_GL_SetAttribute( SDL_GL_RED_SIZE, 8 );
+	SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, 8 );
+	SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, 8 );
+	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 );
+	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
+	if (SDL_SetVideoMode(g.view_width, g.view_height, g.view_bpp, SDL_OPENGL) == 0) {
+		printf("Video mode set failed: %s\n", SDL_GetError());
+		quit(0);
+	}
+
 	gl_setup ();
+
 	printf("Running...\n");
-	glutMainLoop();
-	return 0;
+	g.running = true;
+	SDL_Event event;
+	while(g.running == true) {
+		display();
+		SDL_GL_SwapBuffers();
+		// get all the events on the queue
+		while(SDL_PollEvent(&event)){
+			switch(event.type){
+				case SDL_KEYDOWN:
+					g.running = false;
+					break;
+				case SDL_MOUSEMOTION:
+					update_position(event.motion.x, event.motion.y);
+					break;
+				case SDL_MOUSEBUTTONUP:
+					mouse_up(event.button.button);
+					break;
+				case SDL_QUIT:
+					g.running = false;
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	quit(0);
 }
