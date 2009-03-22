@@ -12,26 +12,22 @@ const GLint OVERLAY = 2;
 
 /* types */
 
-// store world coords and line endpoint status
-struct LinePoint {
+// 2d float point
+struct Coord2f {
 	GLfloat x;
 	GLfloat y;
-	GLboolean end;
 };
 
 // 2D integer point
-typedef struct {
+struct Coord2i {
 	GLint x;
 	GLint y;
-} Point2i;
-
-// 3 by 3 matrix
-typedef GLfloat Matrix3x3[3][3];
+};
 
 // mouse state: 2D position and 5 buttons
 #define MAX_MOUSE_BUTTONS 5
 struct mouse_state {
-	Point2i pos;
+	Coord2i pos;
 	GLboolean button[MAX_MOUSE_BUTTONS];
 };
 
@@ -46,7 +42,9 @@ struct Globals {
 	// how many pixels between each point
 	GLfloat screen_scale;
 	// array of chosen points
-	LinePoint points[MAX_POINTS];
+	Coord2f points[MAX_POINTS];
+	// array denoting line connections or solo points
+	GLboolean ends[MAX_POINTS];
 	// index to last point, the one that will be picked next
 	GLint last_point;
 	// factor to perform each transform by

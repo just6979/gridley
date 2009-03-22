@@ -10,10 +10,9 @@
 			<Target title="Win32">
 				<Option platforms="Windows;" />
 				<Option output="Gridley" prefix_auto="1" extension_auto="1" />
-				<Option object_output="obj\mingw" />
-				<Option type="1" />
-				<Option compiler="gcc" />
-				<Option use_console_runner="0" />
+				<Option object_output="obj/mingw" />
+				<Option type="0" />
+				<Option compiler="mingw" />
 				<Compiler>
 					<Add option="-DNO_STDIO_REDIRECT" />
 				</Compiler>
@@ -31,8 +30,7 @@
 			<Target title="Unix">
 				<Option platforms="Unix;" />
 				<Option output="Gridley" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="" />
-				<Option object_output="obj\unix" />
+				<Option object_output="obj/unix" />
 				<Option type="0" />
 				<Option compiler="gcc" />
 				<Linker>

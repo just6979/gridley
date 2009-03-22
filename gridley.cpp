@@ -57,23 +57,19 @@ GLboolean is_digit(char c) {
 	else return false;
 }
 
-/* translates a screen location to a grid location */
-LinePoint screen_to_world(GLint x, GLint y) {
-	LinePoint tmp;
+// convert interger mouse coords to floating point grid coords
+Coord2f screen2grid(Coord2i screen) {
+	Coord2f tmp;
 
 	// move the points to fit the centered origin
-	x = x - (g.width / 2);
-	y = y - (g.height / 2);
+	GLfloat x = GLfloat(screen.x - (g.width / 2));
+	GLfloat y = GLfloat(-screen.y + (g.height / 2));
 
 	// adjust for scaling
-	tmp.x = float(x) / g.screen_scale;
-	tmp.y = float(-y) / g.screen_scale;
+	tmp.x = x / g.screen_scale;
+	tmp.y = y / g.screen_scale;
 
 	return tmp;
-}
-
-LinePoint screen_to_world(Point2i screen) {
-	return screen_to_world(screen.x, screen.y);
 }
 
 /* round a floating point number to nearest whole */
@@ -96,8 +92,8 @@ GLfloat round_float(GLfloat f) {
 	}
 	return a;
 }
-/* floating point round, one Point at a time */
-LinePoint round_Point(LinePoint p) {
+/* floating point round a whole 2d floating point coord*/
+Coord2f round_Coord2f(Coord2f p) {
 	p.x = round_float(p.x);
 	p.y = round_float(p.y);
 	return p;
@@ -184,7 +180,7 @@ void draw_lines(void) {
 	glColor3f(0.0, 0.0, 0.0);
 	glBegin(GL_LINE_STRIP);
 	for (i = 0; i < g.last_point; i++) {
-		if (g.points[i].end == true) {
+		if (g.ends[i] == true) {
 			glEnd();
 			glBegin(GL_LINE_STRIP);
 			glVertex2f(g.points[i].x, g.points[i].y);
@@ -196,10 +192,10 @@ void draw_lines(void) {
 }
 
 void draw_cur_line(void) {
-	LinePoint last;
+	Coord2f last;
 
 	if (g.snap_to_grid) {
-		last = round_Point(g.points[g.last_point]);
+		last = round_Coord2f(g.points[g.last_point]);
 	} else {
 		last.x = g.points[g.last_point].x;
 		last.y = g.points[g.last_point].y;
@@ -310,7 +306,7 @@ GLuint SurfToTex(SDL_Surface *surface, GLfloat *texcoord)
 	return texture;
 }
 
-void draw_string(char* msg, GLint x, GLint y) {
+void draw_string(const char* msg, GLint x, GLint y) {
 	GLenum gl_error;
 	GLuint texture;
 	GLfloat texcoord[4];
@@ -352,7 +348,7 @@ void draw_help(void) {
 	#define LINES 25
 	GLint i;
 
-	char* help_msg[LINES] = {
+	const char* help_msg[LINES] = {
 		"Gridley Help",
 		"Escape, q = Quit",
 		"F1 = Toggle help display",
@@ -633,10 +629,10 @@ void make_line(GLboolean end = false) {
 		return;
 	}
 
-	g.points[g.last_point].end = end;
+	g.ends[g.last_point] = end;
 
 	if (g.snap_to_grid) {
-		g.points[g.last_point] = round_Point(g.points[g.last_point]);
+		g.points[g.last_point] = round_Coord2f(g.points[g.last_point]);
 	} else {
 		g.points[g.last_point] = g.points[g.last_point];
 	}
@@ -751,7 +747,7 @@ int main(GLint argc, char** argv) {
 		printf("TTF_Init: %s\n", TTF_GetError());
 		quit(1);
 	}
-	char* font_filename = "DejaVuSans.ttf";
+	const char* font_filename = "DejaVuSans.ttf";
 	printf("Loading font: %s\n", font_filename);
 	g.font = TTF_OpenFont(font_filename, 12);
 	g.font_height = TTF_FontLineSkip(g.font);
@@ -766,7 +762,7 @@ int main(GLint argc, char** argv) {
 		cycle_time = this_time - last_time;
 		/* update state of the simulation */
 		// find the mouse and point to it with the next line
-		g.points[g.last_point] = screen_to_world(g.mouse.pos);
+		g.points[g.last_point] = screen2grid(g.mouse.pos);
 
 		/* draw everything and flip buffers */
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
