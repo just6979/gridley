@@ -1,0 +1,6 @@
+syntax: glob
+obj/*
+Gridley.cscope_file_list
+Gridley.depend
+Gridley.exe
+Gridley.layout

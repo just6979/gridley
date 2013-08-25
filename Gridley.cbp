@@ -11,20 +11,20 @@
 				<Option platforms="Windows;" />
 				<Option output="Gridley" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/mingw" />
-				<Option type="0" />
-				<Option compiler="mingw" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Option use_console_runner="0" />
 				<Compiler>
-					<Add option="-DNO_STDIO_REDIRECT" />
+					<Add option="-Dmain=SDL_main" />
+					<Add directory="$(#sfml.include)" />
 				</Compiler>
 				<Linker>
-					<Add library="opengl32" />
 					<Add library="mingw32" />
-					<Add library="SDLmain" />
-					<Add library="SDL.dll" />
-					<Add library="user32" />
-					<Add library="gdi32" />
-					<Add library="winmm" />
-					<Add library="dxguid" />
+					<Add library="sfml_graphics_s" />
+					<Add library="sfml_window_s" />
+					<Add library="sfml_system_s" />
+					<Add library="opengl32" />
+					<Add directory="$(#sfml.lib)" />
 				</Linker>
 			</Target>
 			<Target title="Unix">
@@ -43,16 +43,9 @@
 			<Add option="-pedantic" />
 			<Add option="-Wall" />
 			<Add option="-ansi" />
+			<Add option="-DSFML_STATIC" />
 		</Compiler>
-		<Linker>
-			<Add library="SDL" />
-			<Add library="SDL_ttf" />
-		</Linker>
 		<Unit filename="README.txt" />
-		<Unit filename="SDL_win32_main.c">
-			<Option compilerVar="CC" />
-			<Option target="Win32" />
-		</Unit>
 		<Unit filename="gridley.cpp" />
 		<Unit filename="gridley.hpp" />
 		<Extensions>

@@ -11,31 +11,28 @@ Cool!
 
 /*
 2004-09-17 - GLUT version
-2009-03 - SDL version
+2013-08 - SFML update
 
-This new version has been ported to use SDL instead of GLUT.
+This new version has been ported to use SFML instead of GLUT.
 It is still useful for education, maybe better since GLUT is limited and old,
-while SDL is more capable and still actively developed.
+while SFML is more capable and currently (2013-08) actively developed.
 
 The old version is still available from revision control (Mercurial).
 Recent revisions include Code::Blocks IDE project files as well.
 
-SDL Port Progress:
-2009-03-16: 2 hours
-2009-03-18: 1 hours
-2009-03-21: 3 hours
+SFML Update Progress:
+2013-08-25: 1 hour
+
 */
 
 /* standard libraries */
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
 /* other libraries */
-#include <SDL.h>
-#include <SDL_opengl.h>
-#include <SDL_ttf.h>
+#include <SFML/Graphics.hpp>
+#include <SFML/OpenGL.hpp>
 
 /* various declarations */
 #include "gridley.hpp"
@@ -229,119 +226,88 @@ static int power_of_two(int input)
 	return value;
 }
 
-GLuint SurfToTex(SDL_Surface *surface, GLfloat *texcoord)
-{
-	GLuint texture;
-	int w, h;
-	SDL_Surface *image;
-	SDL_Rect area;
-	Uint32 saved_flags;
-	Uint8  saved_alpha;
-
-	/* Use the surface width and height expanded to powers of 2 */
-	w = power_of_two(surface->w);
-	h = power_of_two(surface->h);
-	texcoord[0] = 0.0f;			/* Min X */
-	texcoord[1] = 0.0f;			/* Min Y */
-	texcoord[2] = (GLfloat)surface->w / w;	/* Max X */
-	texcoord[3] = (GLfloat)surface->h / h;	/* Max Y */
-
-	image = SDL_CreateRGBSurface(
-		SDL_SWSURFACE,
-		w, h,
-		32,
-		/* OpenGL RGBA masks */
-		#if SDL_BYTEORDER == SDL_LIL_ENDIAN
-			0x000000FF,
-			0x0000FF00,
-			0x00FF0000,
-			0xFF000000
-		#else
-			0xFF000000,
-			0x00FF0000,
-			0x0000FF00,
-			0x000000FF
-		#endif
-	);
-	if ( image == NULL ) {
-		return 0;
-	}
-
-	/* Save the alpha blending attributes */
-	saved_flags = surface->flags&(SDL_SRCALPHA|SDL_RLEACCELOK);
-	saved_alpha = surface->format->alpha;
-	if ( (saved_flags & SDL_SRCALPHA) == SDL_SRCALPHA ) {
-		SDL_SetAlpha(surface, 0, 0);
-	}
-
-	/* Copy the surface into the GL texture image */
-	area.x = 0;
-	area.y = 0;
-	area.w = surface->w;
-	area.h = surface->h;
-	SDL_BlitSurface(surface, &area, image, &area);
-
-	/* Restore the alpha blending attributes */
-	if ( (saved_flags & SDL_SRCALPHA) == SDL_SRCALPHA ) {
-		SDL_SetAlpha(surface, saved_flags, saved_alpha);
-	}
-
-	/* Create an OpenGL texture for the image */
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D,
-		     0,
-		     GL_RGBA,
-		     w, h,
-		     0,
-		     GL_RGBA,
-		     GL_UNSIGNED_BYTE,
-		     image->pixels);
-
-	/* No longer needed */
-	SDL_FreeSurface(image);
-
-	return texture;
-}
+//GLuint SurfToTex(SDL_Surface *surface, GLfloat *texcoord)
+//{
+//	GLuint texture;
+//	int w, h;
+//	SDL_Surface *image;
+//	SDL_Rect area;
+////	Uint32 saved_flags;
+////	Uint8  saved_alpha;
+//
+//	/* Use the surface width and height expanded to powers of 2 */
+//	w = power_of_two(surface->w);
+//	h = power_of_two(surface->h);
+//	texcoord[0] = 0.0f;			/* Min X */
+//	texcoord[1] = 0.0f;			/* Min Y */
+//	texcoord[2] = (GLfloat)surface->w / w;	/* Max X */
+//	texcoord[3] = (GLfloat)surface->h / h;	/* Max Y */
+//
+//	image = SDL_CreateRGBSurface(
+//		SDL_SWSURFACE,
+//		w, h,
+//		32,
+//		/* OpenGL RGBA masks */
+//		#if SDL_BYTEORDER == SDL_LIL_ENDIAN
+//			0x000000FF,
+//			0x0000FF00,
+//			0x00FF0000,
+//			0xFF000000
+//		#else
+//			0xFF000000,
+//			0x00FF0000,
+//			0x0000FF00,
+//			0x000000FF
+//		#endif
+//	);
+//	if ( image == NULL ) {
+//		return 0;
+//	}
+//
+//	/* Save the alpha blending attributes */
+////	saved_flags = surface->flags&(SDL_SRCALPHA|SDL_RLEACCELOK);
+////	saved_alpha = surface->format->alpha;
+////	if ( (saved_flags & SDL_SRCALPHA) == SDL_SRCALPHA ) {
+////		SDL_SetAlpha(surface, 0, 0);
+////	}
+//
+//	/* Copy the surface into the GL texture image */
+//	area.x = 0;
+//	area.y = 0;
+//	area.w = surface->w;
+//	area.h = surface->h;
+//	SDL_BlitSurface(surface, &area, image, &area);
+//
+//	/* Restore the alpha blending attributes */
+////	if ( (saved_flags & SDL_SRCALPHA) == SDL_SRCALPHA ) {
+////		SDL_SetAlpha(surface, saved_flags, saved_alpha);
+////	}
+//
+//	/* Create an OpenGL texture for the image */
+//	glGenTextures(1, &texture);
+//	glBindTexture(GL_TEXTURE_2D, texture);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+//	glTexImage2D(GL_TEXTURE_2D,
+//		     0,
+//		     GL_RGBA,
+//		     w, h,
+//		     0,
+//		     GL_RGBA,
+//		     GL_UNSIGNED_BYTE,
+//		     image->pixels);
+//
+//	/* No longer needed */
+//	SDL_FreeSurface(image);
+//
+//	return texture;
+//}
 
 void draw_string(const char* msg, GLint x, GLint y) {
-	GLenum gl_error;
-	GLuint texture;
-	GLfloat texcoord[4];
-	GLfloat texMinX, texMinY;
-	GLfloat texMaxX, texMaxY;
-
-	// render message into a surface
-	SDL_Surface* text = TTF_RenderText_Blended(g.font, msg, g.font_color);
-
-	// convert the surface into an OpenGL texture
-	glGetError();
-	texture = SurfToTex(text, texcoord);
-	if ((gl_error = glGetError()) != GL_NO_ERROR) {
-		// if this failed, the text may exceed texture size limits
-		printf("Warning: Couldn't create texture: 0x%x\n", gl_error);
-	}
-
-	// don't need the original text surface anymore
-	SDL_FreeSurface(text);
-
-	// make texture coordinates easy to understand
-	texMinX = texcoord[0];
-	texMinY = texcoord[1];
-	texMaxX = texcoord[2];
-	texMaxY = texcoord[3];
-
-	/* Show the text on the screen */
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glBegin(GL_TRIANGLE_STRIP);
-	glTexCoord2f(texMinX, texMinY); glVertex2i(x,   y  );
-	glTexCoord2f(texMaxX, texMinY); glVertex2i(x+text->w, y  );
-	glTexCoord2f(texMinX, texMaxY); glVertex2i(x,   y+text->h);
-	glTexCoord2f(texMaxX, texMaxY); glVertex2i(x+text->w, y+text->h);
-	glEnd();
-
+	sf::Text text(msg, g.font, 12);
+	text.setColor(g.font_color);
+	text.setPosition(x, y);
+	g.window.draw(text);
 }
 
 void draw_help(void) {
@@ -439,7 +405,7 @@ void draw_status(void) {
 
 }
 
-void key_down(SDLKey key, SDLMod mod) {
+void key_down(sf::Event::KeyEvent key) {
 	GLint i;
 
 	GLfloat scale_factor = 2;
@@ -452,10 +418,10 @@ void key_down(SDLKey key, SDLMod mod) {
 	GLfloat tmp_x;
 
 	// read digits, make float from them
-	if (is_digit(key) || (key == '.') || (key == '-')) {
-		g.factor = float_from_chars(key);
-		return;
-	}
+//	if (is_digit(key) || (key == '.') || (key == '-')) {
+//		g.factor = float_from_chars(key);
+//		return;
+//	}
 
 	// if user entered a factor, use it, otherwise keep defaults
 	if (g.factor != 0) {
@@ -465,54 +431,54 @@ void key_down(SDLKey key, SDLMod mod) {
 		translate_factor = g.factor;
 	}
 
-	switch (key) {
+	switch (key.code) {
 	// quit
-	case SDLK_q:
-	case SDLK_ESCAPE:
-		quit();
+	case sf::Keyboard::Q:
+	case sf::Keyboard::Escape:
+		g.window.close();
 		break;
 	// toggle fullscreen
-	case SDLK_f:
+	case sf::Keyboard::F:
 		if (g.fullscreen) {
 		} else {
 		}
 		g.fullscreen = !g.fullscreen;
 		break;
 	// toggle current line display
-	case SDLK_l:
+	case sf::Keyboard::L:
 		g.show_cur_line = !g.show_cur_line;
 		break;
 	// toggle grid
-	case SDLK_g:
+	case sf::Keyboard::G:
 		g.show_grid = !g.show_grid;
 		break;
 	// toggle snap to grid
-	case SDLK_p:
+	case sf::Keyboard::P:
 		g.snap_to_grid = !g.snap_to_grid;
 		break;
 	// clear points
-	case SDLK_c:
+	case sf::Keyboard::C:
 		g.last_point = 0;
 		break;
 	// undo last point
-	case SDLK_u:
+	case sf::Keyboard::U:
 		if (g.last_point > 0) g.last_point--;
 		break;
 	// reflect over x or y axis
-	case SDLK_x:
+	case sf::Keyboard::X:
 		for (i = 0; i < g.last_point; i++) {
 			g.points[i].x = -g.points[i].x;
 		}
 		break;
-	case SDLK_y:
+	case sf::Keyboard::Y:
 		for (i = 0; i < g.last_point; i++) {
 			g.points[i].y = -g.points[i].y;
 		}
 		break;
 	// rotate by n degrees, clockwise or counterclockwise (SHIFT)
-	case SDLK_r:
+	case sf::Keyboard::R:
 		rads = degrees_to_radians(rotate_factor);
-		if (mod & KMOD_SHIFT) rads *= -1;
+		if (key.shift) rads *= -1;
 		for (i = 0; i < g.last_point; i++) {
 			tmp_x = g.points[i].x;
 			g.points[i].x = g.points[i].x * cos(rads) + g.points[i].y * -sin(rads);
@@ -520,9 +486,9 @@ void key_down(SDLKey key, SDLMod mod) {
 		}
 		break;
 	// scale by one; up, down; y up, y down; x up, x down
-	case SDLK_s:
+	case sf::Keyboard::S:
 		for(i = 0; i < g.last_point; i++ ) {
-			if (mod & KMOD_SHIFT) {
+			if (key.shift) {
 				g.points[i].x /= scale_factor;
 				g.points[i].y /= scale_factor;
 			} else {
@@ -531,18 +497,18 @@ void key_down(SDLKey key, SDLMod mod) {
 			}
 		}
 		break;
-	case SDLK_t:
+	case sf::Keyboard::T:
 		for(i = 0; i < g.last_point; i++ ) {
-			if (mod & KMOD_SHIFT) {
+			if (key.shift) {
 				g.points[i].y /= scale_factor;
 			} else {
 				g.points[i].y *= scale_factor;
 			}
 		}
 		break;
-	case SDLK_w:
+	case sf::Keyboard::W:
 		for(i = 0; i < g.last_point; i++ ) {
-			if (mod & KMOD_SHIFT) {
+			if (key.shift) {
 				g.points[i].x /= scale_factor;
 			} else {
 				g.points[i].x *= scale_factor;
@@ -550,9 +516,9 @@ void key_down(SDLKey key, SDLMod mod) {
 		}
 		break;
 	// shear x by 1
-	case SDLK_h:
+	case sf::Keyboard::H:
 		for(i = 0; i < g.last_point; i++ ) {
-			if (mod & KMOD_SHIFT) {
+			if (key.shift) {
 				g.points[i].x -= g.points[i].y;
 			} else {
 				g.points[i].x += g.points[i].y;
@@ -560,47 +526,47 @@ void key_down(SDLKey key, SDLMod mod) {
 		}
 		break;
 	// translate by 1: +y, -y, -x, +x
-	case SDLK_UP:
+	case sf::Keyboard::Up:
 		for (i = 0; i < g.last_point; i++) {
 			g.points[i].y += translate_factor;
 		}
 		break;
-	case SDLK_DOWN:
+	case sf::Keyboard::Down:
 		for (i = 0; i < g.last_point; i++) {
 			g.points[i].y -= translate_factor;
 		}
 		break;
-	case SDLK_LEFT:
+	case sf::Keyboard::Left:
 		for (i = 0; i < g.last_point; i++) {
 			g.points[i].x -= translate_factor;
 		}
 		break;
-	case SDLK_RIGHT:
+	case sf::Keyboard::Right:
 		for (i = 0; i < g.last_point; i++) {
 			g.points[i].x += translate_factor;
 		}
 		break;
 	// reset the factor
-	case SDLK_BACKSPACE:
+	case sf::Keyboard::BackSpace:
 		g.factor_index = 0;
 		g.factor = 0;
 		break;
 	// increase number of points in the displayed list
-	case SDLK_RIGHTBRACKET:
+	case sf::Keyboard::RBracket:
 		if (g.display_points < MAX_POINTS) g.display_points++;
 		break;
 	// decrease number of point in the list
-	case SDLK_LEFTBRACKET:
+	case sf::Keyboard::LBracket:
 		if (g.display_points > 0) g.display_points--;
 		break;
 	// toggle help, status, or factor display
-	case SDLK_F1:
+	case sf::Keyboard::F1:
 		g.show_help = !g.show_help;
 		break;
-	case SDLK_F2:
+	case sf::Keyboard::F2:
 		g.show_status = !g.show_status;
 		break;
-	case SDLK_F3:
+	case sf::Keyboard::F3:
 		g.keep_factor = !g.keep_factor;
 		break;
 	default:
@@ -614,8 +580,8 @@ void key_down(SDLKey key, SDLMod mod) {
 	}
 }
 
-SDL_Color make_color(int r, int g, int b) {
-	SDL_Color tmp;
+sf::Color make_color(int r, int g, int b) {
+	sf::Color tmp;
 	tmp.r = r;
 	tmp.g = g;
 	tmp.b = b;
@@ -667,45 +633,42 @@ void setup_gl_view(GLint type) {
 	glLoadIdentity();
 
 }
-SDL_Surface* setup_sdl_video(GLint w, GLint h) {
+
+void setup_video(GLint w, GLint h) {
 	int flags;
 
 	printf("Initializing video\n");
-	SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, 1);
-
+	flags = sf::Style::Titlebar|sf::Style::Close;
 	if (g.fullscreen) {
-		flags = SDL_OPENGL | SDL_FULLSCREEN;
+		flags |= sf::Style::Fullscreen;
 	} else {
-		flags = SDL_OPENGL | SDL_RESIZABLE;
+		flags |= sf::Style::Resize;
 	}
 
-	SDL_Surface* screen = SDL_SetVideoMode(w, h, g.bpp, flags);
-	if (screen == 0) {
-		printf("Video mode set failed: %s\n", SDL_GetError());
-		quit(1);
-	}
+	g.window.create(sf::VideoMode(g.width, g.height), "Gridley", flags);
+	//window.setVerticalSyncEnabled(true);
+	g.window.setFramerateLimit(60);
 
 	g.width = w;
 	g.height = h;
 
+	sf::ContextSettings settings = g.window.getSettings();
+	printf("Utilizing OpenGL %i.%i\n", settings.majorVersion, settings.minorVersion);
+
 	setup_gl_view(GRID);
 
-	return screen;
+	return;
 }
 
 /* entry point */
 int main(GLint argc, char** argv) {
 	// allocate storage for events popped off the queue
-	SDL_Event event;
+	sf::Event event;
 	// keep track of how many milliseconds since the last update
-	GLint cycle_time = 1000;
-	GLint last_time = 0;
-	GLint this_time = 0;
+	sf::Time theTime;
+	int cycle_time = 1000;
+	int last_time = 0;
+	int this_time = 0;
 
 	printf("Starting up\n");
 	g.width = g.height = 800;
@@ -725,40 +688,21 @@ int main(GLint argc, char** argv) {
 	// false is more like Lorenzen's
 	g.keep_factor = true;
 
-	SDL_version ver;
-	SDL_VERSION(&ver);
-	printf("Compiled with SDL %u.%u.%u\n", ver.major, ver.minor, ver.patch);
-	ver = *SDL_Linked_Version();
-	printf("Running with SDL %u.%u.%u\n", ver.major, ver.minor, ver.patch);
+	printf("Compiled with SFML %i.%i\n", SFML_VERSION_MAJOR, SFML_VERSION_MINOR);
 
-	printf("Initializing SDL\n");
-	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-		fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
-		quit(1);
-	}
+	setup_video(g.width, g.height);
 
-	SDL_WM_SetCaption("Gridley", "Gridley");
-	SDL_ShowCursor(false);
-
-	g.screen = setup_sdl_video(g.width, g.height);
-
-	printf("Initializing SDL_ttf\n");
-	if (TTF_Init() < 0) {
-		printf("TTF_Init: %s\n", TTF_GetError());
-		quit(1);
-	}
 	const char* font_filename = "DejaVuSans.ttf";
 	printf("Loading font: %s\n", font_filename);
-	g.font = TTF_OpenFont(font_filename, 12);
-	g.font_height = TTF_FontLineSkip(g.font);
+	g.font.loadFromFile(font_filename);
+	g.font_height = 12;
 	g.font_color = make_color(0, 0, 0);
 
-	g.running = true;
-	printf("Running...\n");
-	while(true) {
+//	g.running = true;
+//	printf("Running...\n");
+	while(g.window.isOpen()) {
 		// give up CPU just long enough to maintain ~60 Hz
-		SDL_Delay(1000/60);
-		this_time = SDL_GetTicks();
+		this_time = theTime.asMilliseconds();
 		cycle_time = this_time - last_time;
 		/* update state of the simulation */
 		// find the mouse and point to it with the next line
@@ -782,32 +726,32 @@ int main(GLint argc, char** argv) {
 		if (g.show_help) draw_help();
 		if (g.show_status) draw_status();
 
-		SDL_GL_SwapBuffers();
+		g.window.display();
 		// get all the events on the queue
-		while(SDL_PollEvent(&event)){
+		while(g.window.pollEvent(event)){
 			switch(event.type){
-				case SDL_QUIT:
-					quit();
+				case sf::Event::Closed:
+					g.window.close();
 					break;
-				case SDL_VIDEORESIZE:
-					setup_sdl_video(event.resize.w, event.resize.h);
+				case sf::Event::Resized:
+					setup_video(event.size.width, event.size.height);
 					break;
-				case SDL_KEYDOWN:
-					key_down(event.key.keysym.sym, event.key.keysym.mod);
+				case sf::Event::KeyPressed:
+					key_down(event.key);
 					break;
-				case SDL_MOUSEMOTION:
-					g.mouse.pos.x = event.motion.x;
-					g.mouse.pos.y = event.motion.y;
+				case sf::Event::MouseMoved:
+					g.mouse.pos.x = event.mouseMove.x;
+					g.mouse.pos.y = event.mouseMove.y;
 					break;
-				case SDL_MOUSEBUTTONDOWN:
-					g.mouse.button[event.button.button] = true;
+				case sf::Event::MouseButtonPressed:
+					g.mouse.button[1] = true;
 					break;
-				case SDL_MOUSEBUTTONUP:
-					g.mouse.button[event.button.button] = false;
-					if (event.button.button == SDL_BUTTON_LEFT) {
+				case sf::Event::MouseButtonReleased:
+					g.mouse.button[2] = false;
+					if (event.mouseButton.button == sf::Mouse::Left) {
 						make_line();
 					}
-					if (event.button.button == SDL_BUTTON_RIGHT) {
+					if (event.mouseButton.button == sf::Mouse::Right) {
 						make_line(true);
 					}
 					break;
@@ -816,16 +760,5 @@ int main(GLint argc, char** argv) {
 			}
 		}
 	}
-	quit();
-	return 0;
+	exit(0);
 }
-
-int quit(int ret) {
-	printf("Quitting SDL_ttf\n");
-	TTF_Quit();
-	printf("Quitting SDL\n");
-	SDL_Quit();
-	printf("Exiting\n");
-	exit(ret);
-}
-

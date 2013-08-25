@@ -50,16 +50,16 @@ struct Globals {
 	// factor to perform each transform by
 	GLfloat factor;
 	// keep track of digits for entering factors
-	GLint factor_index;
+	GLint factor_index
 	// how many points to display in status
 	GLint display_points;
 	// mouse state
 	mouse_state mouse;
 	// framebuffer (or backbuffer if doublebuffered) surface
-	SDL_Surface* screen;
+	sf::RenderWindow window;
 	// DejaVu Sans TrueType font
-	TTF_Font* font;
-	SDL_Color font_color;
+	sf::Font font;
+	sf::Color font_color;
 	GLint font_height;
 	// flags
 	GLboolean show_help;
