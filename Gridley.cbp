@@ -15,14 +15,13 @@
 				<Option compiler="gcc" />
 				<Option use_console_runner="0" />
 				<Compiler>
-					<Add option="-Dmain=SDL_main" />
 					<Add directory="$(#sfml.include)" />
 				</Compiler>
 				<Linker>
 					<Add library="mingw32" />
-					<Add library="sfml_graphics_s" />
-					<Add library="sfml_window_s" />
-					<Add library="sfml_system_s" />
+					<Add library="sfml-graphics-s" />
+					<Add library="sfml-window-s" />
+					<Add library="sfml-system-s" />
 					<Add library="opengl32" />
 					<Add directory="$(#sfml.lib)" />
 				</Linker>
