@@ -268,11 +268,11 @@ GLuint SurfToTex(SDL_Surface *surface, GLfloat *texcoord)
 	}
 
 	/* Save the alpha blending attributes */
-	saved_flags = surface->flags&(SDL_SRCALPHA|SDL_RLEACCELOK);
-	saved_alpha = surface->format->alpha;
-	if ( (saved_flags & SDL_SRCALPHA) == SDL_SRCALPHA ) {
-		SDL_SetAlpha(surface, 0, 0);
-	}
+//	saved_flags = surface->flags&(SDL_SRCALPHA|SDL_RLEACCELOK);
+//	saved_alpha = surface->format->alpha;
+//	if ( (saved_flags & SDL_SRCALPHA) == SDL_SRCALPHA ) {
+//		SDL_SetAlpha(surface, 0, 0);
+//	}
 
 	/* Copy the surface into the GL texture image */
 	area.x = 0;
@@ -282,9 +282,9 @@ GLuint SurfToTex(SDL_Surface *surface, GLfloat *texcoord)
 	SDL_BlitSurface(surface, &area, image, &area);
 
 	/* Restore the alpha blending attributes */
-	if ( (saved_flags & SDL_SRCALPHA) == SDL_SRCALPHA ) {
-		SDL_SetAlpha(surface, saved_flags, saved_alpha);
-	}
+//	if ( (saved_flags & SDL_SRCALPHA) == SDL_SRCALPHA ) {
+//		SDL_SetAlpha(surface, saved_flags, saved_alpha);
+//	}
 
 	/* Create an OpenGL texture for the image */
 	glGenTextures(1, &texture);
@@ -439,7 +439,7 @@ void draw_status(void) {
 
 }
 
-void key_down(SDLKey key, SDLMod mod) {
+void key_down(SDL_Keycode key, Uint16 mod) {
 	GLint i;
 
 	GLfloat scale_factor = 2;
@@ -667,7 +667,7 @@ void setup_gl_view(GLint type) {
 	glLoadIdentity();
 
 }
-SDL_Surface* setup_sdl_video(GLint w, GLint h) {
+void setup_sdl_video(GLint w, GLint h) {
 	int flags;
 
 	printf("Initializing video\n");
@@ -676,30 +676,41 @@ SDL_Surface* setup_sdl_video(GLint w, GLint h) {
 	SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, 1);
+//	SDL_GL_SetAttribute(SDL_GL_SWAP_CONTROL, 1);
 
 	if (g.fullscreen) {
-		flags = SDL_OPENGL | SDL_FULLSCREEN;
+		flags = SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP;
 	} else {
-		flags = SDL_OPENGL | SDL_RESIZABLE;
+		flags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
 	}
 
-	SDL_Surface* screen = SDL_SetVideoMode(w, h, g.bpp, flags);
-	if (screen == 0) {
+	g.screen = SDL_CreateWindow("Gridley",
+                          SDL_WINDOWPOS_CENTERED,
+                          SDL_WINDOWPOS_CENTERED,
+                          w, h,
+                          flags);
+
+	if (g.screen == 0) {
 		printf("Video mode set failed: %s\n", SDL_GetError());
-		quit(1);
+		quit();
 	}
+
+	g.renderer = SDL_CreateRenderer(g.screen, -1, SDL_RENDERER_PRESENTVSYNC);
+
+	g.glcontext = SDL_GL_CreateContext(g.screen);
 
 	g.width = w;
 	g.height = h;
 
 	setup_gl_view(GRID);
 
-	return screen;
+	return;
 }
 
 /* entry point */
-int main(GLint argc, char** argv) {
+int main(int argc, char** argv) {
+	atexit(quit);
+
 	// allocate storage for events popped off the queue
 	SDL_Event event;
 	// keep track of how many milliseconds since the last update
@@ -728,24 +739,23 @@ int main(GLint argc, char** argv) {
 	SDL_version ver;
 	SDL_VERSION(&ver);
 	printf("Compiled with SDL %u.%u.%u\n", ver.major, ver.minor, ver.patch);
-	ver = *SDL_Linked_Version();
-	printf("Running with SDL %u.%u.%u\n", ver.major, ver.minor, ver.patch);
+//	ver = *SDL_Linked_Version();
+//	printf("Running with SDL %u.%u.%u\n", ver.major, ver.minor, ver.patch);
 
 	printf("Initializing SDL\n");
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
-		quit(1);
+		quit();
 	}
 
-	SDL_WM_SetCaption("Gridley", "Gridley");
 	SDL_ShowCursor(false);
 
-	g.screen = setup_sdl_video(g.width, g.height);
+	setup_sdl_video(g.width, g.height);
 
 	printf("Initializing SDL_ttf\n");
 	if (TTF_Init() < 0) {
 		printf("TTF_Init: %s\n", TTF_GetError());
-		quit(1);
+		quit();
 	}
 	const char* font_filename = "DejaVuSans.ttf";
 	printf("Loading font: %s\n", font_filename);
@@ -782,15 +792,15 @@ int main(GLint argc, char** argv) {
 		if (g.show_help) draw_help();
 		if (g.show_status) draw_status();
 
-		SDL_GL_SwapBuffers();
+		SDL_GL_SwapWindow(g.screen);
 		// get all the events on the queue
 		while(SDL_PollEvent(&event)){
 			switch(event.type){
 				case SDL_QUIT:
 					quit();
 					break;
-				case SDL_VIDEORESIZE:
-					setup_sdl_video(event.resize.w, event.resize.h);
+				case SDL_WINDOWEVENT_RESIZED:
+					setup_sdl_video(event.window.data1, event.window.data2);
 					break;
 				case SDL_KEYDOWN:
 					key_down(event.key.keysym.sym, event.key.keysym.mod);
@@ -820,12 +830,11 @@ int main(GLint argc, char** argv) {
 	return 0;
 }
 
-int quit(int ret) {
+void quit(void) {
 	printf("Quitting SDL_ttf\n");
 	TTF_Quit();
 	printf("Quitting SDL\n");
 	SDL_Quit();
 	printf("Exiting\n");
-	exit(ret);
 }
 

@@ -55,8 +55,10 @@ struct Globals {
 	GLint display_points;
 	// mouse state
 	mouse_state mouse;
-	// framebuffer (or backbuffer if doublebuffered) surface
-	SDL_Surface* screen;
+	// SDL window & OpenGL stuff
+	SDL_Window* screen;
+	SDL_Renderer* renderer;
+	SDL_GLContext glcontext;
 	// DejaVu Sans TrueType font
 	TTF_Font* font;
 	SDL_Color font_color;
@@ -75,6 +77,6 @@ struct Globals {
 
 
 /* functions */
-int quit(int = 0);
+void quit(void);
 
 #endif // GRIDLEY_HPP_INCLUDED
